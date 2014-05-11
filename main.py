@@ -3,6 +3,7 @@ from handlers.user_handlers import *
 
 routes = [
           webapp2.Route(r'/player', handler=PlayerHandler, name='player', schemes=['http']), 
+          webapp2.Route(r'/player/login', handler=LoginHandler, name='login', schemes=['http']), 
         ]
 
 
