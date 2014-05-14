@@ -26,7 +26,6 @@ class BaseHandler(webapp2.RequestHandler):
         self.response.set_status(BAD_REQUEST) 
         
     def getJsonBody(self):
-        logging.critical(self.request.body)
         return json.decode(self.request.body)
     
     def createAuthorizationToken(self, user):
@@ -46,7 +45,7 @@ class PlayerHandler(BaseHandler):
         password = client_user['Password']
         mail = client_user['Mail']
 
-        if mail == None: #optional mail was denoted
+        if mail != None: #optional mail was denoted
             success, user = self.store().user_model().create_user(name, unique_properties=['mail'], mail=mail, password_raw=password)
         else: #store without mail
             success, user = self.store().user_model().create_user(name, password_raw=password)
@@ -74,7 +73,7 @@ class LoginHandler(BaseHandler):
         login_data = self.getJsonBody()
         name = login_data['Name']
         password = login_data['Password']
-        
+        logging.critical(name+ " " + password)
         
         try:
             user = self.store().user_model().get_by_auth_password(name, password)
