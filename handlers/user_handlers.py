@@ -10,6 +10,24 @@ import webapp2_extras
 from httplib import BAD_REQUEST
 from models.Error import Error, ErrorCode
 
+
+def user_required(handler):
+
+    def check_login(self, *args, **kwargs):
+        user_id = self.request.get('user_id') 
+        token = self.request.get('token')
+        user, timestamp = self.store().user_model().get_by_auth_token(int(user_id), token)
+        if user:
+            kwargs['user'] = user
+            return handler(self, *args, **kwargs)
+        else:
+            self.sendError(Error(ErrorCode.ACCESS_DENIED, "Authentication failed"))
+            
+
+    return check_login
+
+
+
 class BaseHandler(webapp2.RequestHandler):
     
     def auth(self):
@@ -26,7 +44,8 @@ class BaseHandler(webapp2.RequestHandler):
         self.response.set_status(BAD_REQUEST) 
         
     def getJsonBody(self):
-        return json.decode(self.request.body)
+        logging.critical(self.request.body)
+        return json.decode(self.request.get('model'))
     
     def createAuthorizationToken(self, user):
         id = user.get_id()
@@ -35,8 +54,8 @@ class BaseHandler(webapp2.RequestHandler):
 
 class PlayerHandler(BaseHandler):
     
-    def get(self):
-        self.response.out.write("Hallo Welt")
+    def get(self, user):
+        self.sendJson(user.auth_ids)
     
     def post(self):
         client_user = self.getJsonBody()
