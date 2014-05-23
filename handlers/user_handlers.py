@@ -65,6 +65,7 @@ class PlayerHandler(BaseHandler):
         mail = client_user['Mail']
 
         if mail != None: #optional mail was denoted
+            mail = mail.lower()
             success, user = self.store().user_model().create_user(name, unique_properties=['mail'], mail=mail, password_raw=password)
         else: #store without mail
             success, user = self.store().user_model().create_user(name, password_raw=password)

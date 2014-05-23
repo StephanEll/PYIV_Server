@@ -27,6 +27,17 @@ class PlayerStatus(ndb.Model):
         for round in json['Rounds']:
             rounds.append(Round.create_from_json(round))
             
+            
+class GameData(ndb.Model):
+    
+    createdAt = ndb.DateTimeProperty(auto_now_add=True)
+    updatedAt = ndb.DateTimeProperty(auto_now=True)
+    
+    
+    #challengerStatus through parent/anchestor machanism
+    #defenderStatus through parent/anchestor machanism
+
+    
         
         
             
