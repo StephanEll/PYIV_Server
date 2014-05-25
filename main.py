@@ -13,9 +13,11 @@ routes = [
           webapp2.Route(r'/rounds', handler=RoundHandler, name='round', schemes=['http']),
           
           #PlayerStatus
+          webapp2.Route(r'/playerStatus/<id:\d+>', handler=PlayerStatusHandler, name='playerStatus', schemes=['http']),
           webapp2.Route(r'/playerStatus', handler=PlayerStatusHandler, name='playerStatus', schemes=['http']),
           
           #GameData
+          webapp2.Route(r'/gameData/<id:\d+>', handler=GameDataHandler, name='gameData', schemes=['http']),
           webapp2.Route(r'/gameData', handler=GameDataHandler, name='gameData', schemes=['http']),
           
            

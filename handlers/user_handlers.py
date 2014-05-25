@@ -1,14 +1,7 @@
-import webapp2
-import cgi, logging
-
-import time
-import string
+import logging, string
 import webapp2_extras.appengine.auth.models as auth_models
-
-from webapp2_extras import security, json
-import webapp2_extras
-from httplib import BAD_REQUEST
 from models.Error import Error, ErrorCode
+from util.base_classes import BaseHandler
 
 
 def user_required(handler):
@@ -26,33 +19,13 @@ def user_required(handler):
 
     return check_login
 
-
-
-class BaseHandler(webapp2.RequestHandler):
-    
-    def auth(self):
-        return auth_models.auth.get_auth()
-
-    def store(self):
-        return auth_models.auth.get_store()
-    
-    def sendJson(self, obj):
-        self.response.out.write(json.encode(obj))
-    
-    def sendError(self, error):
-        self.sendJson(error.__dict__)
-        self.response.set_status(BAD_REQUEST) 
-        
-    def getJsonBody(self):
-        logging.critical(self.request.body)
-        return json.decode(self.request.get('model'))
-    
+class AuthorizationBase(BaseHandler):
     def createAuthorizationToken(self, user):
-        id = user.get_id()
-        auth_token = self.store().user_model().create_auth_token(id)
-        return {'id': str(id), 'token': auth_token }
+            id = user.get_id()
+            auth_token = self.store().user_model().create_auth_token(id)
+            return {'id': str(id), 'token': auth_token }
 
-class PlayerHandler(BaseHandler):
+class PlayerHandler(AuthorizationBase):
     
     def get(self, user):
         self.sendJson(user.auth_ids)
@@ -87,13 +60,12 @@ class PlayerHandler(BaseHandler):
 
 
         
-class LoginHandler(BaseHandler):
+class LoginHandler(AuthorizationBase):
     
     def post(self):
         login_data = self.getJsonBody()
         name = login_data['Name']
         password = login_data['Password']
-        logging.critical(name+ " " + password)
         
         try:
             user = self.store().user_model().get_by_auth_password(name, password)

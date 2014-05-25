@@ -1,5 +1,5 @@
-import webapp2
-from user_handlers import BaseHandler, user_required
+from user_handlers import user_required
+from util.base_classes import BaseHandler
 from google.appengine.ext import ndb
 from models.game_persistence import *
 import logging
@@ -7,7 +7,6 @@ import logging
 class RoundHandler(BaseHandler):
     
     def get(self, round_id):
-        logging.critical("RoundId: "+str(round_id))
         requestedRound = Round.get_by_id(int(round_id))
         self.sendJson(requestedRound.to_dict())
         
@@ -24,28 +23,28 @@ class RoundHandler(BaseHandler):
 class PlayerStatusHandler(BaseHandler):
     
     def get(self, id):
-        return
+        playerStatus = PlayerStatus.get_by_id(int(id));
+        self.sendJson(playerStatus.to_dict())
     
-    def post(self):
-        playerStatusJson = self.getJsonBody()
-        logging.critical(playerStatusJson)
-        PlayerStatus.create_from_json(playerStatusJson)
-        
 class GameDataHandler(BaseHandler):
     
-    @user_required
-    def get(self, id, user):
-        return
+    def get(self, id, user=None):
+        gameData = GameData.get_by_id(int(id))
+        self.sendJson(gameData.to_dict())
     
-    @user_required
-    def post(self, user):
+    def post(self, user=None):
         gameDataJson = self.getJsonBody()
         
         gameData = GameData()
         gameDataKey = gameData.put()
         
+        
         for playerStatusJson in gameDataJson['PlayerStatus']:
-            playerStatus = PlayerStatus(parent=gameDataKey)
+            playerStatus = PlayerStatus.create_from_json(playerStatusJson, gameDataKey)
+            playerStatusKey = playerStatus.put()
+            
+        self.sendJson(gameDataKey.get().to_dict())
+        
         
         
     
