@@ -19,6 +19,9 @@ routes = [
           #GameData
           webapp2.Route(r'/gameData/<id:\d+>', handler=GameDataHandler, name='gameData', schemes=['http']),
           webapp2.Route(r'/gameData', handler=GameDataHandler, name='gameData', schemes=['http']),
+
+          #GameCollection
+          webapp2.Route(r'/gameDataCollection', handler=GameDataCollectionHandler, name='gameDataCollection', schemes=['http']),
           
            
         ]

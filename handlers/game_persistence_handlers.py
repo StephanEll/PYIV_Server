@@ -45,7 +45,15 @@ class GameDataHandler(BaseHandler):
             
         self.sendJson(gameDataKey.get().to_dict())
         
+class GameDataCollectionHandler(BaseHandler):
+    
+    @user_required
+    def get(self, user):
         
+        playerStatusList = PlayerStatus.query(PlayerStatus.player == user.key).fetch()
+        keys = map(lambda x: x.key.parent(), playerStatusList)
+        gameDataList = ndb.get_multi(keys)
+        self.sendJson({'modelList':map(lambda x: x.to_dict(), gameDataList)})
         
     
     
