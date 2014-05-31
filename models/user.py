@@ -15,8 +15,15 @@ class User(auth_models.User, base_classes.ModelBase):
     cgm_ids = ndb.StringProperty(repeated = True)
     wins = ndb.KeyProperty(kind='User', repeated= True)    
     defeats = ndb.KeyProperty(kind='User', repeated= True)
-    validated = ndb.BooleanProperty(default = False)    
+    validated = ndb.BooleanProperty(default = False)
     
-    
+    @property
+    def authToken(self):
+        return self._authToken
+
+    @authToken.setter
+    def authToken(self, value):
+        self._authToken = value
+
 
             

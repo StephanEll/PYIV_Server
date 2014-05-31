@@ -20,10 +20,14 @@ def user_required(handler):
     return check_login
 
 class AuthorizationBase(BaseHandler):
-    def createAuthorizationToken(self, user):
-            id = user.get_id()
-            auth_token = self.store().user_model().create_auth_token(id)
-            return {'id': str(id), 'token': auth_token }
+    def sendAuthorizedUser(self, user):
+        """ Authtoken fuer User generieren und alles als Json senden """
+        auth_token = self.store().user_model().create_auth_token(user.get_id())
+        userDict = user.to_dict(exclude=['password'])
+        userDict['authToken'] = auth_token
+        userDict['id'] = user.get_id()
+        
+        self.sendJson(userDict)
 
 class PlayerHandler(AuthorizationBase):
     
@@ -47,8 +51,7 @@ class PlayerHandler(AuthorizationBase):
         
     def _sendResponse(self, isSuccessfulCreated, user):
         if isSuccessfulCreated:
-            user_info = self.createAuthorizationToken(user)
-            self.sendJson(user_info)
+            self.sendAuthorizedUser(user)
         else:
             error = self._createNotUniqueError(user)
             self.sendError(error)
@@ -69,8 +72,7 @@ class LoginHandler(AuthorizationBase):
         
         try:
             user = self.store().user_model().get_by_auth_password(name, password)
-            auth_data = self.createAuthorizationToken(user)
-            self.sendJson(auth_data)
+            self.sendAuthorizedUser(user)
         except (auth_models.auth.InvalidAuthIdError, auth_models.auth.InvalidPasswordError) as e:
             message = "Username or password is incorrect. Please try again."
             error = Error(ErrorCode.INVALID_LOGIN, message)
