@@ -1,10 +1,11 @@
 from util import helper, base_classes
 from google.appengine.ext import ndb
 from models.user import User
+from webapp2 import logging
 
 class Round(ndb.Model):
     
-    sentAttackerIds = ndb.IntegerProperty(repeated=True)
+    sentAttackerIds = ndb.StringProperty(repeated=True)
     remainingVillageLifepoints = ndb.IntegerProperty()
     
     @classmethod
@@ -29,6 +30,7 @@ class PlayerStatus(base_classes.ModelBase):
         
         rounds = []
         for round in json['Rounds']:
+            logging.info("ROUND" + str(round))
             rounds.append(Round.create_from_json(round))
             
         playerStatus.rounds = rounds
