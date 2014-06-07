@@ -8,6 +8,7 @@ class ErrorCode:
     NOT_UNIQUE = 11
     INVALID_LOGIN = 12
     ACCESS_DENIED = 13
+    NOT_FOUND = 14
 
 class Error(object):
     '''

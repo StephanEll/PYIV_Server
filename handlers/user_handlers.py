@@ -2,6 +2,7 @@ import logging, string
 import webapp2_extras.appengine.auth.models as auth_models
 from models.Error import Error, ErrorCode
 from util.base_classes import BaseHandler
+from models.user import User
 
 
 def user_required(handler):
@@ -31,13 +32,22 @@ class AuthorizationBase(BaseHandler):
 
 class PlayerHandler(AuthorizationBase):
     
-    def get(self, user):
-        self.sendJson(user.auth_ids)
+    def get(self):
+        logging.info("get")
+        #self.sendJson(user.auth_ids)
     
+    def search(self, name):
+        name = name.lower()
+        user = self.store().user_model().get_by_auth_id(name)
+        if user:
+            self.sendJson(user.to_dict(exclude=['password']))
+        else:
+            self.sendError(Error(ErrorCode.NOT_FOUND, "The requestest player was not found. Make sure you spelled the name correct."))
+        
     def post(self):
         client_user = self.getJsonBody()
         
-        name = client_user['Name']
+        name = client_user['Name'].lower()
         password = client_user['Password']
         mail = client_user['Mail']
 
@@ -61,13 +71,16 @@ class PlayerHandler(AuthorizationBase):
         return Error(ErrorCode.NOT_UNIQUE, "The following fields are already in use: "+ string.join(propertiesThatAreNotUnique, ' and '))
         
 
-
+        
+    
+        
+        
         
 class LoginHandler(AuthorizationBase):
     
     def post(self):
         login_data = self.getJsonBody()
-        name = login_data['Name']
+        name = login_data['Name'].lower()
         password = login_data['Password']
         
         try:
@@ -77,4 +90,7 @@ class LoginHandler(AuthorizationBase):
             message = "Username or password is incorrect. Please try again."
             error = Error(ErrorCode.INVALID_LOGIN, message)
             self.sendError(error)
+    
+    
+    
     
