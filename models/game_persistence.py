@@ -20,6 +20,7 @@ class Round(ndb.Model):
 class PlayerStatus(base_classes.ModelBase):
     
     player = ndb.KeyProperty(kind=User)
+    isChallengeAccepted = ndb.BooleanProperty()
     indianId = ndb.StringProperty()
     rounds = ndb.LocalStructuredProperty(Round, repeated=True)
     
@@ -30,10 +31,10 @@ class PlayerStatus(base_classes.ModelBase):
         playerStatus.player = ndb.Key('User', int(json["Player"]["Id"]))
         rounds = []
         for round in json['Rounds']:
-            logging.info("ROUND" + str(round))
             rounds.append(Round.create_from_json(round))
             
         playerStatus.indianId = json["IndianId"]
+        playerStatus.isChallengeAccepted = json["IsChallengeAccepted"]
         playerStatus.rounds = rounds
         return playerStatus
     
