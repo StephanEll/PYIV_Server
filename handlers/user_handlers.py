@@ -1,8 +1,8 @@
-import logging, string
+import logging, string, urllib
 import webapp2_extras.appengine.auth.models as auth_models
 from models.Error import Error, ErrorCode
 from util.base_classes import BaseHandler
-from models.user import User
+from models.user import User, GcmData
 
 
 def user_required(handler):
@@ -15,7 +15,7 @@ def user_required(handler):
             kwargs['user'] = user
             return handler(self, *args, **kwargs)
         else:
-            self.sendError(Error(ErrorCode.ACCESS_DENIED, "Authentication failed"))
+            self.send_error(Error(ErrorCode.ACCESS_DENIED, "Authentication failed"))
             
 
     return check_login
@@ -28,24 +28,24 @@ class AuthorizationBase(BaseHandler):
         userDict['authToken'] = auth_token
         userDict['id'] = user.get_id()
         
-        self.sendJson(userDict)
+        self.send_json(userDict)
 
 class PlayerHandler(AuthorizationBase):
     
     def get(self):
         logging.info("get")
-        #self.sendJson(user.auth_ids)
+        #self.send_json(user.auth_ids)
     
     def search(self, name):
         name = name.lower()
         user = self.store().user_model().get_by_auth_id(name)
         if user:
-            self.sendJson(user.to_dict(exclude=['password']))
+            self.send_json(user.to_dict(exclude=['password']))
         else:
-            self.sendError(Error(ErrorCode.NOT_FOUND, "The requestest player was not found. Make sure you spelled the name correct."))
+            self.send_error(Error(ErrorCode.NOT_FOUND, "The requestest player was not found. Make sure you spelled the name correct."))
         
     def post(self):
-        client_user = self.getJsonBody()
+        client_user = self.get_json_body()
         
         name = client_user['Name'].lower()
         password = client_user['Password']
@@ -64,7 +64,7 @@ class PlayerHandler(AuthorizationBase):
             self.sendAuthorizedUser(user)
         else:
             error = self._createNotUniqueError(user)
-            self.sendError(error)
+            self.send_error(error)
     
     def _createNotUniqueError(self, propertiesThatAreNotUnique):
         propertiesThatAreNotUnique = map(lambda x: "nickname" if x == "auth_id" else x, propertiesThatAreNotUnique)
@@ -79,7 +79,7 @@ class PlayerHandler(AuthorizationBase):
 class LoginHandler(AuthorizationBase):
     
     def post(self):
-        login_data = self.getJsonBody()
+        login_data = self.get_json_body()
         name = login_data['Name'].lower()
         password = login_data['Password']
         
@@ -89,8 +89,32 @@ class LoginHandler(AuthorizationBase):
         except (auth_models.auth.InvalidAuthIdError, auth_models.auth.InvalidPasswordError) as e:
             message = "Username or password is incorrect. Please try again."
             error = Error(ErrorCode.INVALID_LOGIN, message)
-            self.sendError(error)
+            self.send_error(error)
     
     
+class GcmHandler(BaseHandler):
     
+    @user_required
+    def post(self, user):
+        gcm_data_json = self.get_json_body()
+        device_id = gcm_data_json["DeviceId"]
+        gcm_id = gcm_data_json["GcmId"]
+        
+        logging.info("GCM DATA RECEIVED: "+ device_id + ", " + gcm_id)
+        
+        existing_gcm_entries = filter(lambda data: data.gcm_id == gcm_id and data.device_id == device_id, user.gcmIds)
+        
+        if len(existing_gcm_entries) > 0:
+            logging.info("Found fitting gcm data in database, go and update it")
+            gcm_data = existing_gcm_entries[0]
+            gcm_data.isActive = True
+        else:
+            logging.info("No gcm entry found. Create a new one")
+            user.gcmIds.append(GcmData(device_id=device_id, gcm_id=gcm_id, isActive=True))
+            
+        user.put()
+        logging.info("Update player model")
+
+
+        
     

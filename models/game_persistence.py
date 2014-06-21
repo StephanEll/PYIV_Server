@@ -53,6 +53,12 @@ class GameData(base_classes.ModelBase):
     createdAt = ndb.DateTimeProperty(auto_now_add=True)
     updatedAt = ndb.DateTimeProperty(auto_now=True)
     
+    @classmethod
+    def get_all_by_user(cls, user):
+        player_status_list = PlayerStatus.query(PlayerStatus.player == user.key).fetch()
+        keys = map(lambda x: x.key.parent(), player_status_list)
+        game_data_list = ndb.get_multi(keys)
+        return game_data_list
     
     def _get_player_status(self):
         playerStatus = PlayerStatus.query(ancestor=self.key).fetch(2)

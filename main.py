@@ -30,6 +30,9 @@ routes = [
           #GameCollection
           webapp2.Route(r'/gameDataCollection', handler=GameDataCollectionHandler, name='gameDataCollection', schemes=['http', 'https']),
 
+          #Google Cloud Messaging
+          webapp2.Route(r'/gcm', handler=GcmHandler, name='gcm', schemes=['http', 'https']),
+
           #test
           webapp2.Route(r'/', handler=TestHandler, name='test', schemes=['http', 'https']),
           

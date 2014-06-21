@@ -9,6 +9,7 @@ class ErrorCode:
     INVALID_LOGIN = 12
     ACCESS_DENIED = 13
     NOT_FOUND = 14
+    DUBLICATED = 15
 
 class Error(object):
     '''
