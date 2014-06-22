@@ -35,6 +35,8 @@ class PlayerHandler(AuthorizationBase):
     def get(self):
         logging.info("get")
         #self.send_json(user.auth_ids)
+        
+   
     
     def search(self, name):
         name = name.lower()
@@ -77,6 +79,17 @@ class PlayerHandler(AuthorizationBase):
         
         
 class LoginHandler(AuthorizationBase):
+    
+    def get(self):
+        auth_data = self.get_json_body()
+        user_id = int(auth_data['Id']);
+        token = auth_data['AuthToken'];
+        
+        user, timestamp = self.store().user_model().get_by_auth_token(user_id, token)
+        if user:
+            self.send_json(user.to_dict(exclude=['password']))
+        else:
+            self.send_error(Error(ErrorCode.ACCESS_DENIED, "The auth data isn't valid."))
     
     def post(self):
         login_data = self.get_json_body()

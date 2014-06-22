@@ -14,6 +14,7 @@ routes = [
           webapp2.Route(r'/player/login', handler=LoginHandler, name='login', schemes=['http', 'https']), 
           #Search
           webapp2.Route(r'/player/search/<name:\w+>', handler=PlayerHandler, handler_method='search', name='player_search', schemes=['http', 'https']), 
+          #By Auth Data
 
           #Rounds
           webapp2.Route(r'/rounds/<round_id:\d+>', handler=RoundHandler, name='round', schemes=['http', 'https']), 
