@@ -58,7 +58,8 @@ class BaseHandler(webapp2.RequestHandler):
                                     headers=header)
             logging.info("RESULTSTATUS: " + str(result.status_code)+ " RESULT: " + str(result.content))
         
-        return result
+            return result
+        
 
     
 
