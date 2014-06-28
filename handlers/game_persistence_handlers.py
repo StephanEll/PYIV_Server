@@ -38,10 +38,9 @@ class GameDataHandler(BaseHandler):
         game_data_json = self.get_json_body()
         
         opponent = User.get_by_id(int(game_data_json['PlayerStatus'][1]['Player']['Id']))
-        
+        challenger_name = game_data_json['PlayerStatus'][0]['Player']['Name']
         self.send_push_notification(opponent, 
-                                    "New challenge", 
-                                    opponent.name + " attacks your village", 
+                                    challenger_name + " attacks your village", 
                                     "Defend yourself!", 
                                     {'data' : 'data'})
 

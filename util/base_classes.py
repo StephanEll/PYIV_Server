@@ -26,7 +26,7 @@ class BaseHandler(webapp2.RequestHandler):
     def get_json_body(self):
         return json.decode(self.request.get('model'))
     
-    def send_push_notification(self, user, ticker, content_title, content_text, data, collapse_key=None):
+    def send_push_notification(self, user, title, message, data, collapse_key=None):
         url = "https://android.googleapis.com/gcm/send"
         header = {
                   'Content-Type': 'application/json',
@@ -36,9 +36,8 @@ class BaseHandler(webapp2.RequestHandler):
         if data == None:
             data = {}
         
-        data['ticker'] = ticker
-        data['content_title'] = content_title
-        data['content_text'] = content_text
+        data['title'] = title
+        data['message'] = message
         
         payload = {
                    'registration_ids' : map(lambda data: data.gcm_id, filter(lambda data: data.isActive == True, user.gcmIds)),
