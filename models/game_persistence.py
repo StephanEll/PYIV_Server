@@ -3,18 +3,37 @@ from google.appengine.ext import ndb
 from models.user import User
 from webapp2 import logging
 
+class ScoreResult(ndb.Model):
+    
+    remainingVillageLifepoints = ndb.IntegerProperty()
+    missedShotCount = ndb.IntegerProperty()
+    killCount = ndb.IntegerProperty()
+    hitCount = ndb.IntegerProperty()
+    
+    @classmethod
+    def create_from_json(cls, json):
+        scoreResult = ScoreResult()
+        scoreResult.update_from_json(json)
+        return scoreResult
+    
+    def update_from_json(self, json):
+        self.remainingVillageLifepoints= json['RemainingVillageLifepoints']
+        self.missedShotCount= json['MissedShotCount']
+        self.killCount= json['KillCount']
+        self.hitCount= json['HitCount']
+
+
 class Round(ndb.Model):
     
     sentAttackerIds = ndb.StringProperty(repeated=True)
-    remainingVillageLifepoints = ndb.IntegerProperty()
+    scoreResult = ndb.StructuredProperty(ScoreResult)
     
     @classmethod
     def create_from_json(cls, json):
         round = Round()
         round.sentAttackerIds = json['SentAttackerIds']
-        round.remainingVillageLifepoints = json['RemainingVillageLifepoints']
+        round.scoreResult = ScoreResult.create_from_json(json['ScoreResult'])
         return round
-        
         
         
 class PlayerStatus(base_classes.ModelBase):
@@ -29,14 +48,20 @@ class PlayerStatus(base_classes.ModelBase):
         
         playerStatus = PlayerStatus(parent=parentKey)
         playerStatus.player = ndb.Key('User', int(json["Player"]["Id"]))
+        
+        playerStatus.update_from_json(json)
+        
+        return playerStatus
+    
+    
+    def update_from_json(self, json):
         rounds = []
         for round in json['Rounds']:
             rounds.append(Round.create_from_json(round))
             
-        playerStatus.indianId = json["IndianId"]
-        playerStatus.isChallengeAccepted = json["IsChallengeAccepted"]
-        playerStatus.rounds = rounds
-        return playerStatus
+        self.indianId = json["IndianId"]
+        self.isChallengeAccepted = json["IsChallengeAccepted"]
+        self.rounds = rounds
     
     
     def _include_in_dict(self, results, exclude=None):
@@ -51,14 +76,17 @@ class PlayerStatus(base_classes.ModelBase):
 class GameData(base_classes.ModelBase):
     
     createdAt = ndb.DateTimeProperty(auto_now_add=True)
-    updatedAt = ndb.DateTimeProperty(auto_now=True)
+    updatedAt = ndb.DateTimeProperty(auto_now=True, indexed=True)
     
     @classmethod
     def get_all_by_user(cls, user):
         player_status_list = PlayerStatus.query(PlayerStatus.player == user.key).fetch()
         keys = map(lambda x: x.key.parent(), player_status_list)
         game_data_list = ndb.get_multi(keys)
-        return game_data_list
+        
+        
+        
+        return sorted(game_data_list, key=lambda game: game.updatedAt)
     
     def _get_player_status(self):
         playerStatus = PlayerStatus.query(ancestor=self.key).fetch(2)
