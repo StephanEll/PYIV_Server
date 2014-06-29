@@ -4,6 +4,7 @@ from google.appengine.ext import ndb
 from models.game_persistence import *
 import logging
 from models.Error import ErrorCode, Error
+from util.helper import NotificationType
 
 class RoundHandler(BaseHandler):
     
@@ -42,7 +43,8 @@ class GameDataHandler(BaseHandler):
         self.send_push_notification(opponent, 
                                     challenger_name + " attacks your village", 
                                     "Defend yourself!", 
-                                    {'data' : 'data'})
+                                    NotificationType.SYNC,
+                                    )
 
         if self._already_running_game_against_opponent(game_data_json):
             self.send_error(Error(ErrorCode.DUBLICATED, "You already entered combat against this player."))
@@ -81,6 +83,44 @@ class GameDataCollectionHandler(BaseHandler):
         
         game_data_list = GameData.get_all_by_user(user)
         self.send_json({'modelList':map(lambda x: x.to_dict(), game_data_list)})
+        
+    @user_required
+    def put(self, user):
+        
+        #Update users player_status
+        unsynced_games_json = self.get_json_body()
+        
+        
+        #Update games
+        game_keys = map(lambda game: ndb.Key('GameData', int(game['Id'])), unsynced_games_json)
+        games = ndb.get_multi(game_keys)
+        #update timestamp
+        ndb.put_multi(games)
+        logging.info("updated games to newest timestamp " + str(game_keys))
+        
+        
+        def player_status_of_user(game):
+            if game['playerStatus'][0]['Player']['Id'] == user.get_id():
+                return game['playerStatus'][0]
+            else:
+                return game['playerStatus'][1]
+        
+        users_player_status = map(player_status_of_user, unsynced_games_json)
+        player_status_keys = map(lambda player_status: ndb.Key(PlayerStatus, int(player_status['Id'])), users_player_status)
+        player_status = ndb.get_multi(player_status_keys)
+        
+        for i in range(len(player_status)):
+            
+            if player_status[i].get_id() != users_player_status[i]["Id"]:
+                logging.error("!!!Verschiedene Reinfolge der beiden Player Status Listen. Das haette nicht passieren duerfen")
+            player_status[i].update_from_json(users_player_status[i])
+            
+        ndb.put_multi(player_status)
+        logging.info("updated player status "+ str(player_status))
+        
+        #send list
+        self.get(user=user)
+        
         
     
     

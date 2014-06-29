@@ -4,6 +4,10 @@ Created on 24.05.2014
 @author: Henrik
 '''
 
+class NotificationType:
+    SYNC = 1
+    CHALLENGE_DENIED = 6
+
 
 
 def default_json_serializer(obj):
