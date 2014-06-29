@@ -12,6 +12,7 @@ class ScoreResult(ndb.Model):
     
     @classmethod
     def create_from_json(cls, json):
+        logging.info("create from json:  test " + str(json))
         scoreResult = ScoreResult()
         scoreResult.update_from_json(json)
         return scoreResult
@@ -30,9 +31,11 @@ class Round(ndb.Model):
     
     @classmethod
     def create_from_json(cls, json):
+        logging.info("create from json:  test " + str(json))
         round = Round()
         round.sentAttackerIds = json['SentAttackerIds']
-        round.scoreResult = ScoreResult.create_from_json(json['ScoreResult'])
+        if json["ScoreResult"] != None:
+            round.scoreResult = ScoreResult.create_from_json(json['ScoreResult'])
         return round
         
         
