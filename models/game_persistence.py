@@ -3,7 +3,7 @@ from google.appengine.ext import ndb
 from models.user import User
 from webapp2 import logging
 
-class ScoreResult(ndb.Model):
+class ScoreResult(base_classes.ModelBase):
     
     remainingVillageLifepoints = ndb.IntegerProperty()
     missedShotCount = ndb.IntegerProperty()
@@ -24,7 +24,7 @@ class ScoreResult(ndb.Model):
         self.hitCount= json['HitCount']
 
 
-class Round(ndb.Model):
+class Round(base_classes.ModelBase):
     
     sentAttackerIds = ndb.StringProperty(repeated=True)
     scoreResult = ndb.StructuredProperty(ScoreResult)
@@ -46,6 +46,8 @@ class PlayerStatus(base_classes.ModelBase):
     indianId = ndb.StringProperty()
     rounds = ndb.LocalStructuredProperty(Round, repeated=True)
     
+    
+    
     @classmethod
     def create_from_json(cls, json, parentKey):
         
@@ -58,6 +60,8 @@ class PlayerStatus(base_classes.ModelBase):
     
     
     def update_from_json(self, json):
+        
+        
         rounds = []
         for round in json['Rounds']:
             rounds.append(Round.create_from_json(round))

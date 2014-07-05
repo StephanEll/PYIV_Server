@@ -4,7 +4,8 @@ from google.appengine.ext import ndb
 from models.game_persistence import *
 import logging
 from models.Error import ErrorCode, Error
-from util.helper import NotificationType
+from util.helper import NotificationType, player_status_of_user, opponent_status_of_user
+from util import messages
 
 class RoundHandler(BaseHandler):
     
@@ -35,6 +36,39 @@ class GameDataHandler(BaseHandler):
         self.send_json(gameData.to_dict())
     
     @user_required
+    def put(self, user):
+        game_json = self.get_json_body()
+        
+        logging.info(str(game_json))
+        
+        game = GameData.get_by_id(int(game_json['Id']))
+        game.put()
+        
+        users_player_status_json = player_status_of_user(game_json, user)
+        users_player_status = PlayerStatus.get_by_id(int(users_player_status_json['Id']), game.key)
+        users_player_status.update_from_json(users_player_status_json)
+        users_player_status.put()
+        self.send_json(game.to_dict())
+        
+    @user_required
+    def delete(self, user):
+        game_json = self.get_json_body()
+        game = GameData.get_by_id(int(game_json['Id']))
+        game.key.delete()
+        ndb.delete_multi(PlayerStatus.query(ancestor=game.key).iter(keys_only = True))
+        
+        opponent_status = opponent_status_of_user(game_json, user)
+        opponent = User.get_by_id(int(opponent_status['Player']['Id']))
+        
+        self.send_push_notification(opponent, 
+                                    messages.CHALLENGE_DECLINED_TITLE, 
+                                    messages.CHALLENGE_DECLINED%opponent.name, 
+                                    NotificationType.CHALLENGE_DENIED, 
+                                    {})
+        self.send_json({})
+    
+    
+    @user_required
     def post(self, user):
         game_data_json = self.get_json_body()
         
@@ -44,6 +78,7 @@ class GameDataHandler(BaseHandler):
                                     challenger_name + " attacks your village", 
                                     "Defend yourself!", 
                                     NotificationType.SYNC,
+                                    {}
                                     )
 
         if self._already_running_game_against_opponent(game_data_json):
@@ -97,13 +132,7 @@ class GameDataCollectionHandler(BaseHandler):
         #update timestamp
         ndb.put_multi(games)
         logging.info("updated games to newest timestamp " + str(game_keys))
-        
-        
-        def player_status_of_user(game):
-            if game['playerStatus'][0]['Player']['Id'] == user.get_id():
-                return game['playerStatus'][0]
-            else:
-                return game['playerStatus'][1]
+
         
         users_player_status = map(player_status_of_user, unsynced_games_json)
         player_status_keys = map(lambda player_status: ndb.Key(PlayerStatus, int(player_status['Id'])), users_player_status)

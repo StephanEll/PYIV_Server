@@ -27,6 +27,16 @@ def valueNotInList(strValue, list):
     return not(list != None and strValue in list)
     
     
-
+def player_status_of_user(game_json, user):
+    if int(game_json['PlayerStatus'][0]['Player']['Id']) == user.get_id():
+        return game_json['PlayerStatus'][0]
+    else:
+        return game_json['PlayerStatus'][1]
+    
+def opponent_status_of_user(game_json, user):
+    if int(game_json['PlayerStatus'][0]['Player']['Id']) != user.get_id():
+        return game_json['PlayerStatus'][0]
+    else:
+        return game_json['PlayerStatus'][1]
     
 
