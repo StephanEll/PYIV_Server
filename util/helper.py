@@ -3,6 +3,7 @@ Created on 24.05.2014
 
 @author: Henrik
 '''
+from webapp2_extras import json
 
 class NotificationType:
     SYNC = 1
@@ -21,7 +22,7 @@ def default_json_serializer(obj):
             calendar.timegm(obj.timetuple()) * 1000 +
             obj.microsecond / 1000
         )
-        return (millis/1000)
+        return int(millis/1000)
     
 def valueNotInList(strValue, list):
     return not(list != None and strValue in list)
@@ -40,3 +41,6 @@ def opponent_status_of_user(game_json, user):
         return game_json['PlayerStatus'][1]
     
 
+
+def serialize_json(data):
+    return json.encode(data, default=default_json_serializer)

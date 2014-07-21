@@ -16,6 +16,7 @@ class GcmData(base_classes.ModelBase):
     device_id = ndb.StringProperty()
     isActive = ndb.BooleanProperty()
     
+    
 
 class User(auth_models.User, base_classes.ModelBase):
     
@@ -25,6 +26,7 @@ class User(auth_models.User, base_classes.ModelBase):
     wins = ndb.KeyProperty(kind='User', repeated= True)    
     defeats = ndb.KeyProperty(kind='User', repeated= True)
     validated = ndb.BooleanProperty(default = False)
+    loggedIn = ndb.BooleanProperty(default = False)
     
     @property
     def name(self):

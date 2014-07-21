@@ -2,7 +2,7 @@ from user_handlers import user_required
 from util.base_classes import BaseHandler
 from google.appengine.ext import ndb
 from models.game_persistence import *
-import logging
+import logging, time, datetime
 from models.Error import ErrorCode, Error
 from util.helper import NotificationType, player_status_of_user, opponent_status_of_user
 from util import messages
@@ -74,12 +74,6 @@ class GameDataHandler(BaseHandler):
         
         opponent = User.get_by_id(int(game_data_json['PlayerStatus'][1]['Player']['Id']))
         challenger_name = game_data_json['PlayerStatus'][0]['Player']['Name']
-        self.send_push_notification(opponent, 
-                                    challenger_name + " attacks your village", 
-                                    "Defend yourself!", 
-                                    NotificationType.SYNC,
-                                    {}
-                                    )
 
         if self._already_running_game_against_opponent(game_data_json):
             self.send_error(Error(ErrorCode.DUBLICATED, "You already entered combat against this player."))
@@ -94,6 +88,12 @@ class GameDataHandler(BaseHandler):
             playerStatusKey = playerStatus.put()
             
             
+        self.send_push_notification(opponent, 
+                                    challenger_name + " attacks your village", 
+                                    "Defend yourself!", 
+                                    NotificationType.SYNC,
+                                    {}
+                                    )
             
         self.send_json(gameDataKey.get().to_dict())
         
@@ -147,8 +147,16 @@ class GameDataCollectionHandler(BaseHandler):
         ndb.put_multi(player_status)
         logging.info("updated player status "+ str(player_status))
         
+        
+        
         #send list
-        self.get(user=user)
+        timestamp = datetime.datetime.now()
+        game_data_list = GameData.get_all_by_user(user)
+        self.send_json(
+                       {
+                        'modelList': map(lambda x: x.to_dict(), game_data_list),
+                        'Timestamp': timestamp
+                        })
         
         
     

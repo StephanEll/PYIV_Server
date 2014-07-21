@@ -1,11 +1,10 @@
-import webapp2, urllib, logging
+import webapp2, urllib, logging, datetime
 import webapp2_extras.appengine.auth.models as auth_models
 from google.appengine.ext import ndb
 from webapp2_extras import json
 from httplib import BAD_REQUEST
-from util.helper import default_json_serializer
+from util.helper import default_json_serializer, serialize_json
 from google.appengine.api import urlfetch
-from urllib import urlencode
 
 
 class BaseHandler(webapp2.RequestHandler):
@@ -17,7 +16,7 @@ class BaseHandler(webapp2.RequestHandler):
         return auth_models.auth.get_store()
     
     def send_json(self, obj):
-        self.response.out.write(json.encode(obj, default=default_json_serializer))
+        self.response.out.write(serialize_json(obj))
     
     def send_error(self, error):
         self.send_json(error.__dict__)
@@ -39,6 +38,7 @@ class BaseHandler(webapp2.RequestHandler):
         data['title'] = title
         data['message'] = message
         data['type'] = type
+        data['timestamp'] = datetime.datetime.now()
         
         payload = {
                    'registration_ids' : map(lambda data: data.gcm_id, filter(lambda data: data.isActive == True, user.gcmIds)),
@@ -53,7 +53,7 @@ class BaseHandler(webapp2.RequestHandler):
         
         if payload['registration_ids'] != []:
             result = urlfetch.fetch(url=url,
-                                    payload=json.encode(payload),
+                                    payload=serialize_json(payload),
                                     method=urlfetch.POST,
                                     headers=header)
             logging.info("RESULTSTATUS: " + str(result.status_code)+ " RESULT: " + str(result.content))
