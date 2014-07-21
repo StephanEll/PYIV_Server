@@ -7,10 +7,11 @@ Created on 03.05.2014
 import webapp2
 import webapp2_extras.appengine.auth.models as auth_models
 from google.appengine.ext import ndb
-from util import base_classes, helper
+from util.base_classes import ModelBase
+from util.helper import opponent_status_of_user
 
 
-class GcmData(base_classes.ModelBase):
+class GcmData(ModelBase):
     
     gcm_id = ndb.StringProperty()
     device_id = ndb.StringProperty()
@@ -18,7 +19,7 @@ class GcmData(base_classes.ModelBase):
     
     
 
-class User(auth_models.User, base_classes.ModelBase):
+class User(auth_models.User, ModelBase):
     
     mail = ndb.StringProperty()
 
@@ -39,6 +40,10 @@ class User(auth_models.User, base_classes.ModelBase):
     @authToken.setter
     def authToken(self, value):
         self._authToken = value
-
+        
+    def opponent_in_game(self, game_json):
+        opponent_status = opponent_status_of_user(game_json, self)
+        opponent = User.get_by_id(int(opponent_status['Player']['Id'])) 
+        return opponent
 
             

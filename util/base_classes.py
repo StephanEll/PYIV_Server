@@ -25,6 +25,7 @@ class BaseHandler(webapp2.RequestHandler):
     def get_json_body(self):
         return json.decode(self.request.get('model'))
     
+    @classmethod
     def send_push_notification(self, user, title, message, type, data, collapse_key=None):
         url = "https://android.googleapis.com/gcm/send"
         header = {
