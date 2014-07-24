@@ -44,7 +44,7 @@ class PlayerHandler(AuthorizationBase):
         if user:
             self.send_json(user.to_dict(exclude=['password']))
         else:
-            self.send_error(Error(ErrorCode.NOT_FOUND, "The requestest player was not found. Make sure you spelled the name correct."))
+            self.send_error(Error(ErrorCode.NOT_FOUND, Error.MESSAGE_PLAYER_NOT_FOUND))
         
     def post(self):
         client_user = self.get_json_body()
@@ -55,9 +55,9 @@ class PlayerHandler(AuthorizationBase):
 
         if mail != None: #optional mail was denoted
             mail = mail.lower()
-            success, user = self.store().user_model().create_user(name, unique_properties=['mail'], mail=mail, password_raw=password)
+            success, user = self.store().user_model().create_user(name, unique_properties=['mail'], mail=mail, loggedIn = True ,password_raw=password)
         else: #store without mail
-            success, user = self.store().user_model().create_user(name, password_raw=password)
+            success, user = self.store().user_model().create_user(name, password_raw=password, loggedIn=True)
         
         self._sendResponse(success, user)
         
@@ -70,7 +70,7 @@ class PlayerHandler(AuthorizationBase):
     
     def _createNotUniqueError(self, propertiesThatAreNotUnique):
         propertiesThatAreNotUnique = map(lambda x: "nickname" if x == "auth_id" else x, propertiesThatAreNotUnique)
-        return Error(ErrorCode.NOT_UNIQUE, "The following fields are already in use: "+ string.join(propertiesThatAreNotUnique, ' and '))
+        return Error(ErrorCode.NOT_UNIQUE, Error.MESSAGE_IN_USE + string.join(propertiesThatAreNotUnique, ' and '))
         
 
         
@@ -89,7 +89,7 @@ class LoginHandler(AuthorizationBase):
         if user:
             self.send_json(user.to_dict(exclude=['password']))
         else:
-            self.send_error(Error(ErrorCode.ACCESS_DENIED, "The auth data isn't valid."))
+            self.send_error(Error(ErrorCode.ACCESS_DENIED, Error.MESSAGE_AUTH_DATA_NOT_VALID))
     
     def post(self):
         login_data = self.get_json_body()
@@ -98,14 +98,40 @@ class LoginHandler(AuthorizationBase):
         
         try:
             user = self.store().user_model().get_by_auth_password(name, password)
-            self.sendAuthorizedUser(user)
+            if user.loggedIn:
+                error = Error(ErrorCode.LOGGED_IN_ON_OTHER_DEVICE, Error.MESSAGE_LOGGED_IN_ON_OTHER_DEVICE)
+                self.send_error(error)
+            else:
+                user.loggedIn = True
+                user.put()
+                self.sendAuthorizedUser(user)
         except (auth_models.auth.InvalidAuthIdError, auth_models.auth.InvalidPasswordError) as e:
-            message = "Username or password is incorrect. Please try again."
-            error = Error(ErrorCode.INVALID_LOGIN, message)
+            error = Error(ErrorCode.INVALID_LOGIN, Error.MESSAGE_INCORRECT)
             self.send_error(error)
     
-    
+    @user_required
+    def delete(self, user):
+        gcm_data_json = self.get_json_body()
+        device_id = gcm_data_json["DeviceId"]
+        gcm_id = gcm_data_json["GcmId"]
+        GcmHandler.set_gcm_data_active(user, device_id, gcm_id, False)
+        user.loggedIn = False
+        user.put()
+        
+        logging.info("user status changed: "+ str(user))
+        
+        user_id = self.request.get('user_id') 
+        token = self.request.get('token')
+        self.store().user_model().delete_auth_token(int(user_id), token)
+
+        logging.info("auth token deleted")
+        
+        self.send_json({})
+        
+        
 class GcmHandler(BaseHandler):
+    
+    
     
     @user_required
     def post(self, user):
@@ -113,21 +139,20 @@ class GcmHandler(BaseHandler):
         device_id = gcm_data_json["DeviceId"]
         gcm_id = gcm_data_json["GcmId"]
         
-        logging.info("GCM DATA RECEIVED: "+ device_id + ", " + gcm_id)
+        found = GcmHandler.set_gcm_data_active(user, device_id, gcm_id, True)
         
-        existing_gcm_entries = filter(lambda data: data.gcm_id == gcm_id and data.device_id == device_id, user.gcmIds)
-        
-        if len(existing_gcm_entries) > 0:
-            logging.info("Found fitting gcm data in database, go and update it")
-            gcm_data = existing_gcm_entries[0]
-            gcm_data.isActive = True
-        else:
+        if not found:
             logging.info("No gcm entry found. Create a new one")
             user.gcmIds.append(GcmData(device_id=device_id, gcm_id=gcm_id, isActive=True))
             
         user.put()
-        logging.info("Update player model")
 
 
-        
-    
+    @classmethod
+    def set_gcm_data_active(cls, user, device_id, gcm_id, active):
+        for gcm_data in user.gcmIds:
+            if gcm_data.gcm_id == gcm_id and gcm_data.device_id == device_id:
+                logging.info("Found fitting gcm data in database, go and update it")
+                gcm_data.isActive = active
+                return True
+        return False
