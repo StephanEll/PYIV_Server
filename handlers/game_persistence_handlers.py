@@ -125,27 +125,29 @@ class GameDataCollectionHandler(BaseHandler):
         #Update users player_status
         unsynced_games_json = self.get_json_body()
         
+        logging.info("user: " + str(user))
+        logging.info("unsynced games json: " + str(unsynced_games_json))
         
-        #Update games
-        game_keys = map(lambda game: ndb.Key('GameData', int(game['Id'])), unsynced_games_json)
-        games = ndb.get_multi(game_keys)
-        #update timestamp
-        ndb.put_multi(games)
-        logging.info("updated games to newest timestamp " + str(game_keys))
-
-        
-        users_player_status = map(player_status_of_user, unsynced_games_json)
-        player_status_keys = map(lambda player_status: ndb.Key(PlayerStatus, int(player_status['Id'])), users_player_status)
-        player_status = ndb.get_multi(player_status_keys)
-        
-        for i in range(len(player_status)):
+        for game_json in unsynced_games_json:
+            game_key = ndb.Key(GameData, int(game_json['Id']))
+            users_player_status_json = player_status_of_user(game_json, user)
+            logging.info("users_player_status_json: " + str(users_player_status_json))
+            player_status_key = ndb.Key(GameData, int(game_json['Id']), PlayerStatus, int(users_player_status_json['Id']))
             
-            if player_status[i].get_id() != users_player_status[i]["Id"]:
-                logging.error("!!!Verschiedene Reinfolge der beiden Player Status Listen. Das haette nicht passieren duerfen")
-            player_status[i].update_from_json(users_player_status[i])
+            game, player_status = ndb.get_multi([game_key, player_status_key])
             
-        ndb.put_multi(player_status)
-        logging.info("updated player status "+ str(player_status))
+            update_list = []
+            
+            if player_status != None:
+                player_status.update_from_json(users_player_status_json)
+                update_list.append(player_status)
+                logging.info("updated_player_status " + str(player_status))
+            
+            if game != None:
+                update_list.append(game)
+                
+            ndb.put_multi(update_list)
+        
         
         #send list
         self.get(user=user)
