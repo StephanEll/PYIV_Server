@@ -43,6 +43,7 @@ class PlayerStatus(base_classes.ModelBase):
     
     player = ndb.KeyProperty(kind=User)
     isChallengeAccepted = ndb.BooleanProperty()
+    gold = ndb.IntegerProperty()
     indianId = ndb.StringProperty()
     rounds = ndb.LocalStructuredProperty(Round, repeated=True)
     
@@ -68,6 +69,7 @@ class PlayerStatus(base_classes.ModelBase):
             
         self.indianId = json["IndianId"]
         self.isChallengeAccepted = json["IsChallengeAccepted"]
+        self.gold = json["Gold"]
         self.rounds = rounds
     
     
