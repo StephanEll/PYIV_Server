@@ -9,6 +9,7 @@ class ScoreResult(base_classes.ModelBase):
     missedShotCount = ndb.IntegerProperty()
     killCount = ndb.IntegerProperty()
     hitCount = ndb.IntegerProperty()
+    extraPoints = ndb.IntegerProperty()
     
     @classmethod
     def create_from_json(cls, json):
@@ -22,12 +23,14 @@ class ScoreResult(base_classes.ModelBase):
         self.missedShotCount= json['MissedShotCount']
         self.killCount= json['KillCount']
         self.hitCount= json['HitCount']
+        self.extraPoints= json['ExtraPoints']
 
 
 class Round(base_classes.ModelBase):
     
     sentAttackerIds = ndb.StringProperty(repeated=True)
     scoreResult = ndb.StructuredProperty(ScoreResult)
+    
     
     @classmethod
     def create_from_json(cls, json):
@@ -47,8 +50,12 @@ class PlayerStatus(base_classes.ModelBase):
     indianId = ndb.StringProperty()
     rounds = ndb.LocalStructuredProperty(Round, repeated=True)
     
+    def is_latest_round_complete(self):
+        return self.rounds[-1].scoreResult != None
     
-    
+    def has_lost(self):
+        return self.is_latest_round_complete() and self.rounds[-1].scoreResult.remainingVillageLifepoints <= 0
+         
     @classmethod
     def create_from_json(cls, json, parentKey):
         

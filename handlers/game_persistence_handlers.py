@@ -50,18 +50,33 @@ class GameDataHandler(BaseHandler):
         users_player_status_json = player_status_of_user(json, user)
         users_player_status = PlayerStatus.get_by_id(int(users_player_status_json['Id']), game.key)
         users_player_status.update_from_json(users_player_status_json)
-        users_player_status.put()
         
         
         opponent = user.opponent_in_game(json)
         
+        opponent_player_status_json = opponent_status_of_user(json, user)
+        opponent_player_status = PlayerStatus.get_by_id(int(opponent_player_status_json['Id']), game.key)
+        
+        #check if rounds are finished and add new round
+        
+        rounds_complete = users_player_status.is_latest_round_complete() and opponent_player_status.is_latest_round_complete()
+        game_is_over = users_player_status.has_lost() or opponent_player_status.has_lost()
+        
+        if rounds_complete and not game_is_over:
+                        
+            users_player_status.rounds.append(Round())
+            opponent_player_status.rounds.append(Round())
+            opponent_player_status.put()
+            logging.info("add new round")
+        
+        users_player_status.put()
         BaseHandler.send_push_notification(opponent, 
                                     messages.OPPONENT_MADE_MOVE_TITLE, 
                                     messages.OPPONENT_MADE_MOVE%user.name, 
                                     NotificationType.CONTINUE, 
                                     {})
         
-        return game
+        return game.key.get()
         
         
     @user_required
