@@ -70,6 +70,8 @@ class GameDataHandler(BaseHandler):
             logging.info("add new round")
         
         users_player_status.put()
+        
+        #TODO: Game Ended: Stats hochzaehlen, Nachrichten schicken
         BaseHandler.send_push_notification(opponent, 
                                     messages.OPPONENT_MADE_MOVE_TITLE, 
                                     messages.OPPONENT_MADE_MOVE%user.name, 
@@ -83,17 +85,22 @@ class GameDataHandler(BaseHandler):
     def delete(self, user):
         game_json = self.get_json_body()
         game = GameData.get_by_id(int(game_json['Id']))
+        
+        has_ended = game.has_ended()
+        
         game.key.delete()
         ndb.delete_multi(PlayerStatus.query(ancestor=game.key).iter(keys_only = True))
         
         
-        opponent = user.opponent_in_game(game_json)
+        
+        if not has_ended:
+            opponent = user.opponent_in_game(game_json)
                
-        BaseHandler.send_push_notification(opponent, 
-                                    messages.CHALLENGE_DECLINED_TITLE, 
-                                    messages.CHALLENGE_DECLINED%user.name, 
-                                    NotificationType.CHALLENGE_DENIED, 
-                                    {})
+            BaseHandler.send_push_notification(opponent, 
+                                        messages.CHALLENGE_DECLINED_TITLE, 
+                                        messages.CHALLENGE_DECLINED%user.name, 
+                                        NotificationType.CHALLENGE_DENIED, 
+                                        {})
         self.send_json({})
     
     

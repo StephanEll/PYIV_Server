@@ -104,6 +104,10 @@ class GameData(base_classes.ModelBase):
         
         return sorted(game_data_list, key=lambda game: game.updatedAt)
     
+    def has_ended(self):
+        player_status = self._get_player_status()
+        return player_status[0].has_lost() or player_status[1].has_lost()
+    
     def _get_player_status(self):
         playerStatus = PlayerStatus.query(ancestor=self.key).fetch(2)
         return map(lambda x: x.to_dict(), playerStatus)
