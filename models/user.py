@@ -17,6 +17,10 @@ class GcmData(ModelBase):
     device_id = ndb.StringProperty()
     isActive = ndb.BooleanProperty()
     
+class HistoryData(ModelBase):
+    opponent = ndb.KeyProperty(kind='User', repeated= True)
+    status = ndb.StringProperty(repeated=True, choices = ["won", "lost", "draw"])
+    timestamp = ndb.DateTimeProperty(auto_now_add=True)
     
 
 class User(auth_models.User, ModelBase):
@@ -24,8 +28,8 @@ class User(auth_models.User, ModelBase):
     mail = ndb.StringProperty()
 
     gcmIds = ndb.StructuredProperty(GcmData, repeated = True)
-    wins = ndb.KeyProperty(kind='User', repeated= True)    
-    defeats = ndb.KeyProperty(kind='User', repeated= True)
+    #history = ndb.StructuredProperty(HistoryData, repeated= True)    
+    
     validated = ndb.BooleanProperty(default = False)
     loggedIn = ndb.BooleanProperty(default = False)
     

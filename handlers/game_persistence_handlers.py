@@ -71,15 +71,33 @@ class GameDataHandler(BaseHandler):
         
         users_player_status.put()
         
-        #TODO: Game Ended: Stats hochzaehlen, Nachrichten schicken
-        BaseHandler.send_push_notification(opponent, 
-                                    messages.OPPONENT_MADE_MOVE_TITLE, 
-                                    messages.OPPONENT_MADE_MOVE%user.name, 
-                                    NotificationType.CONTINUE, 
-                                    {})
+        if rounds_complete and game_is_over:
+            GameDataHandler._game_is_over(users_player_status, opponent_player_status, user, opponent)
+        else:
+            BaseHandler.send_push_notification(opponent, 
+                                        messages.OPPONENT_MADE_MOVE_TITLE, 
+                                        messages.OPPONENT_MADE_MOVE%user.name, 
+                                        NotificationType.CONTINUE, 
+                                        {})
         
         return game.key.get()
-        
+    
+    @classmethod    
+    def _game_is_over(self, users_player_status, opponent_player_status, user, opponent):
+        message = ""
+            
+        if users_player_status.has_lost() and opponent_player_status.has_lost():
+            message = messages.GAME_DRAW
+        elif opponent_player_status.has_lost():
+            message = messages.GAME_LOST
+        else:
+            message = messages.GAME_WON
+            
+        BaseHandler.send_push_notification(opponent, 
+                                messages.GAME_ENDED, 
+                                message%user.name, 
+                                NotificationType.SYNC, 
+                                {})
         
     @user_required
     def delete(self, user):
@@ -143,17 +161,35 @@ class GameDataHandler(BaseHandler):
         
         for key in player1_game_keys:
             if key in player2_game_keys:
-                return True
+                game = key.get()
+                return False if game.has_ended() else True
         
         return False
         
 class GameDataCollectionHandler(BaseHandler):
     
+    def get_games_and_delete_old(self, user):
+        game_data_list = GameData.get_all_by_user(user)
+        
+        delete_keys = []
+        active_games = []
+        
+        for game in game_data_list:
+            delta_time = datetime.datetime.now() - game.updatedAt
+            two_days_in_seconds = 2 * 24 * 60 * 60
+            if delta_time.total_seconds() > two_days_in_seconds and game.has_ended():
+                delete_keys.append(game.key)
+            else:
+                active_games.append(game)
+                
+        ndb.delete_multi(delete_keys)
+        
+        return active_games
+    
     @user_required
     def get(self, user):
         
-        game_data_list = GameData.get_all_by_user(user)
-        self.send_json({'modelList':map(lambda x: x.to_dict(), game_data_list)})
+        self.send_json({'modelList':map(lambda x: x.to_dict(), self.get_games_and_delete_old(user))})
         
     @user_required
     def put(self, user):
@@ -169,7 +205,7 @@ class GameDataCollectionHandler(BaseHandler):
         game_data_list = GameData.get_all_by_user(user)
         self.send_json(
                        {
-                        'modelList': map(lambda x: x.to_dict(), game_data_list),
+                        'modelList': map(lambda x: x.to_dict(), self.get_games_and_delete_old(user)),
                         'Timestamp': timestamp
                         })
         

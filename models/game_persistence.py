@@ -46,6 +46,7 @@ class PlayerStatus(base_classes.ModelBase):
     
     player = ndb.KeyProperty(kind=User)
     isChallengeAccepted = ndb.BooleanProperty()
+    isResultNoticed = ndb.BooleanProperty()
     gold = ndb.IntegerProperty()
     indianId = ndb.StringProperty()
     rounds = ndb.LocalStructuredProperty(Round, repeated=True)
@@ -105,8 +106,14 @@ class GameData(base_classes.ModelBase):
         return sorted(game_data_list, key=lambda game: game.updatedAt)
     
     def has_ended(self):
-        player_status = self._get_player_status()
-        return player_status[0].has_lost() or player_status[1].has_lost()
+        player_status = PlayerStatus.query(ancestor=self.key).fetch(2)
+        
+        rounds_complete = player_status[0].is_latest_round_complete() and player_status[1].is_latest_round_complete()
+        someone_lost = player_status[0].has_lost() or player_status[1].has_lost()
+        
+        
+        return rounds_complete and someone_lost
+
     
     def _get_player_status(self):
         playerStatus = PlayerStatus.query(ancestor=self.key).fetch(2)
