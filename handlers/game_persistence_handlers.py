@@ -162,7 +162,8 @@ class GameDataHandler(BaseHandler):
         for key in player1_game_keys:
             if key in player2_game_keys:
                 game = key.get()
-                return False if game.has_ended() else True
+                if not game.has_ended():
+                    return True
         
         return False
         

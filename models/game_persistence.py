@@ -109,7 +109,9 @@ class GameData(base_classes.ModelBase):
         player_status = PlayerStatus.query(ancestor=self.key).fetch(2)
         
         rounds_complete = player_status[0].is_latest_round_complete() and player_status[1].is_latest_round_complete()
+        logging.info('rounds complete?: '+str(rounds_complete))
         someone_lost = player_status[0].has_lost() or player_status[1].has_lost()
+        logging.info('someone lost?: '+str(someone_lost))
         
         
         return rounds_complete and someone_lost
