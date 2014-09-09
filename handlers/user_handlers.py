@@ -10,6 +10,8 @@ def user_required(handler):
     def check_login(self, *args, **kwargs):
         user_id = self.request.get('user_id') 
         token = self.request.get('token')
+        logging.info(user_id)
+        logging.info(token)
         user, timestamp = self.store().user_model().get_by_auth_token(int(user_id), token)
         if user:
             kwargs['user'] = user

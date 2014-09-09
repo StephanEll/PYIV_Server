@@ -1,6 +1,7 @@
 import webapp2
 from handlers.user_handlers import *
 from handlers.game_persistence_handlers import *
+from handlers.highscore_handler import HighscoreHandler
 
 class TestHandler(BaseHandler):
     def get(self):
@@ -30,6 +31,9 @@ routes = [
 
           #GameCollection
           webapp2.Route(r'/gameDataCollection', handler=GameDataCollectionHandler, name='gameDataCollection', schemes=['http', 'https']),
+
+          #Highscore
+          webapp2.Route(r'/highscore', handler=HighscoreHandler, name='highscoreHandler', schemes=['http', 'https']),
 
           #Google Cloud Messaging
           webapp2.Route(r'/gcm', handler=GcmHandler, name='gcm', schemes=['http', 'https']),

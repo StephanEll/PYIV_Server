@@ -28,10 +28,15 @@ class User(auth_models.User, ModelBase):
     mail = ndb.StringProperty()
 
     gcmIds = ndb.StructuredProperty(GcmData, repeated = True)
-    #history = ndb.StructuredProperty(HistoryData, repeated= True)    
+    
+    wins = ndb.KeyProperty(kind='user', repeated=True)   
+    defeats = ndb.KeyProperty(kind='user', repeated=True)
+    draws = ndb.KeyProperty(kind='user', repeated=True)
     
     validated = ndb.BooleanProperty(default = False)
     loggedIn = ndb.BooleanProperty(default = False)
+    
+    score = ndb.ComputedProperty(lambda self: len(self.wins) * 3 + len(self.draws) )
     
     @property
     def name(self):
