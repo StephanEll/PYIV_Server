@@ -100,13 +100,7 @@ class LoginHandler(AuthorizationBase):
         
         try:
             user = self.store().user_model().get_by_auth_password(name, password)
-            if user.loggedIn:
-                error = Error(ErrorCode.LOGGED_IN_ON_OTHER_DEVICE, Error.MESSAGE_LOGGED_IN_ON_OTHER_DEVICE)
-                self.send_error(error)
-            else:
-                user.loggedIn = True
-                user.put()
-                self.sendAuthorizedUser(user)
+            self.sendAuthorizedUser(user)
         except (auth_models.auth.InvalidAuthIdError, auth_models.auth.InvalidPasswordError) as e:
             error = Error(ErrorCode.INVALID_LOGIN, Error.MESSAGE_INCORRECT)
             self.send_error(error)
@@ -117,7 +111,6 @@ class LoginHandler(AuthorizationBase):
         device_id = gcm_data_json["DeviceId"]
         gcm_id = gcm_data_json["GcmId"]
         GcmHandler.set_gcm_data_active(user, device_id, gcm_id, False)
-        user.loggedIn = False
         user.put()
         
         logging.info("user status changed: "+ str(user))

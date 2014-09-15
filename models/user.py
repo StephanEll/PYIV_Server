@@ -9,6 +9,7 @@ import webapp2_extras.appengine.auth.models as auth_models
 from google.appengine.ext import ndb
 from util.base_classes import ModelBase
 from util.helper import opponent_status_of_user
+from util import helper
 
 
 class GcmData(ModelBase):
@@ -29,12 +30,11 @@ class User(auth_models.User, ModelBase):
 
     gcmIds = ndb.StructuredProperty(GcmData, repeated = True)
     
-    wins = ndb.KeyProperty(kind='user', repeated=True)   
-    defeats = ndb.KeyProperty(kind='user', repeated=True)
-    draws = ndb.KeyProperty(kind='user', repeated=True)
+    wins = ndb.KeyProperty(kind='User', repeated=True)   
+    defeats = ndb.KeyProperty(kind='User', repeated=True)
+    draws = ndb.KeyProperty(kind='User', repeated=True)
     
     validated = ndb.BooleanProperty(default = False)
-    loggedIn = ndb.BooleanProperty(default = False)
     
     score = ndb.ComputedProperty(lambda self: len(self.wins) * 3 + len(self.draws) )
     
@@ -54,5 +54,6 @@ class User(auth_models.User, ModelBase):
         opponent_status = opponent_status_of_user(game_json, self)
         opponent = User.get_by_id(int(opponent_status['Player']['Id'])) 
         return opponent
+       
 
             

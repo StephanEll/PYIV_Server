@@ -74,7 +74,9 @@ class ModelBase(ndb.Model):
         if self.key is not None:
             results["id"] = self.key.id()
             
-        return {key: value for key, value in results.iteritems() if value != []}
+            
+            
+        return {key: value for key, value in results.iteritems() if value != [] or value != None}
         
         
         

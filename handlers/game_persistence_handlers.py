@@ -88,11 +88,19 @@ class GameDataHandler(BaseHandler):
             
         if users_player_status.has_lost() and opponent_player_status.has_lost():
             message = messages.GAME_DRAW
+            user.draws.append(opponent.key)
+            opponent.draws.append(user.key)
         elif opponent_player_status.has_lost():
             message = messages.GAME_LOST
+            user.wins.append(opponent.key)
+            opponent.defeats.append(user.key)
         else:
             message = messages.GAME_WON
+            user.defeats.append(opponent.key)
+            opponent.wins.append(user.key)
             
+        user.put()
+        opponent.put()
         BaseHandler.send_push_notification(opponent, 
                                 messages.GAME_ENDED, 
                                 message%user.name, 
