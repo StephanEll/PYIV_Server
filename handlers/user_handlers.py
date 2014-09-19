@@ -3,7 +3,7 @@ import webapp2_extras.appengine.auth.models as auth_models
 from models.Error import Error, ErrorCode
 from util.base_classes import BaseHandler
 from models.user import User, GcmData
-
+from util.helper import default_json_serializer, serialize_json
 
 def user_required(handler):
 
@@ -89,6 +89,7 @@ class LoginHandler(AuthorizationBase):
         
         user, timestamp = self.store().user_model().get_by_auth_token(user_id, token)
         if user:
+            user.put()
             self.send_json(user.to_dict(exclude=['password']))
         else:
             self.send_error(Error(ErrorCode.ACCESS_DENIED, Error.MESSAGE_AUTH_DATA_NOT_VALID))
@@ -100,6 +101,7 @@ class LoginHandler(AuthorizationBase):
         
         try:
             user = self.store().user_model().get_by_auth_password(name, password)
+            user.put()
             self.sendAuthorizedUser(user)
         except (auth_models.auth.InvalidAuthIdError, auth_models.auth.InvalidPasswordError) as e:
             error = Error(ErrorCode.INVALID_LOGIN, Error.MESSAGE_INCORRECT)
@@ -122,6 +124,8 @@ class LoginHandler(AuthorizationBase):
         logging.info("auth token deleted")
         
         self.send_json({})
+        
+        
         
         
 class GcmHandler(BaseHandler):
@@ -151,3 +155,13 @@ class GcmHandler(BaseHandler):
                 gcm_data.isActive = active
                 return True
         return False
+    
+    
+class RandomPlayerHandler(BaseHandler):
+    @user_required
+    def get(self, user):
+        randomPlayers = User.query().order(-User.updated).fetch(4)
+        randomPlayers = filter(lambda player: player != user, randomPlayers)
+        dict = map(lambda player: player.to_dict(exclude=['password']), randomPlayers)
+        logging.info("JSON Random::: "+str(serialize_json(dict)))
+        self.send_json(dict)

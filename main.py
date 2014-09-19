@@ -37,6 +37,9 @@ routes = [
 
           #Google Cloud Messaging
           webapp2.Route(r'/gcm', handler=GcmHandler, name='gcm', schemes=['http', 'https']),
+          
+          #Random Players
+          webapp2.Route(r'/randomPlayers', handler=RandomPlayerHandler, name='randomPlayerHandler', schemes=['http', 'https']),
 
           #test
           webapp2.Route(r'/', handler=TestHandler, name='test', schemes=['http', 'https']),

@@ -13,7 +13,6 @@ class ScoreResult(base_classes.ModelBase):
     
     @classmethod
     def create_from_json(cls, json):
-        logging.info("create from json:  test " + str(json))
         scoreResult = ScoreResult()
         scoreResult.update_from_json(json)
         return scoreResult
@@ -99,9 +98,6 @@ class GameData(base_classes.ModelBase):
         player_status_list = PlayerStatus.query(PlayerStatus.player == user.key).fetch()
         keys = map(lambda x: x.key.parent(), player_status_list)
         game_data_list = ndb.get_multi(keys)
-        
-        
-        
         return sorted(game_data_list, key=lambda game: game.updatedAt, reverse=True)
     
     def has_ended(self):

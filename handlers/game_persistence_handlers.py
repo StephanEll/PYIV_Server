@@ -44,6 +44,7 @@ class GameDataHandler(BaseHandler):
         
     @classmethod
     def update_game(cls, json, user):
+        logging.info("update game json: "+str(json))
         game = GameData.get_by_id(int(json['Id']))
         game.put()
         
@@ -90,14 +91,17 @@ class GameDataHandler(BaseHandler):
             message = messages.GAME_DRAW
             user.draws.append(opponent.key)
             opponent.draws.append(user.key)
+            logging.info("Game ended in a draw")
         elif opponent_player_status.has_lost():
             message = messages.GAME_LOST
             user.wins.append(opponent.key)
             opponent.defeats.append(user.key)
+            logging.info("Game won")
         else:
             message = messages.GAME_WON
             user.defeats.append(opponent.key)
             opponent.wins.append(user.key)
+            logging.info("Game lost")
             
         user.put()
         opponent.put()
@@ -114,8 +118,8 @@ class GameDataHandler(BaseHandler):
         
         has_ended = game.has_ended()
         
-        game.key.delete()
         ndb.delete_multi(PlayerStatus.query(ancestor=game.key).iter(keys_only = True))
+        game.key.delete()
         
         
         
@@ -191,7 +195,9 @@ class GameDataCollectionHandler(BaseHandler):
             else:
                 active_games.append(game)
                 
-        ndb.delete_multi(delete_keys)
+        for game_key in delete_keys:
+            ndb.delete_multi(PlayerStatus.query(ancestor=game_key).iter(keys_only = True))
+            game_key.delete()
         
         return active_games
     
